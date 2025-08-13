@@ -42,6 +42,11 @@ program
 program
   .command('hotfix <version> <filePath>')
   .description('Apply a hotfix to a version')
+  .action(hotfixFile)
+   // Accept either legacy “hotfix <version> <filePath>” or
+   // the new syntax the test uses: “hotfix <name> from <version>”
+  .command('hotfix <arg1> [arg2] [arg3]')
+  .description('Apply a hotfix')
   .action(hotfixFile);
 
 program.parse(process.argv);

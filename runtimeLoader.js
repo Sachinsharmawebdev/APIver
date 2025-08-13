@@ -2,11 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 const crypto = require('crypto');
-const { applyPatch } = require('./utils/diff');
+const { applyPatch } = require('./lib/utils/diff');
 
 const memoryCache = {};
 const ALGO = 'aes-256-ctr';
-const SECRET = process.env.APIVER_SECRET || 'apiver-secret'; // configurable
+const SECRET = process.env.APIVER_SECRET || 'apiver-secret-key-that-is-32-chars-long';
 
 function decryptAndDecompress(filePath) {
     const encrypted = fs.readFileSync(filePath);

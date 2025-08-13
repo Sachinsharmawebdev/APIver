@@ -1,5 +1,5 @@
-import { loadVersion } from "./runtimeLoader";
-import express from "express";
+const { loadVersion } = require("./runtimeLoader");
+const express = require("express");
 
 const versionRouterCache = {};
 
@@ -10,18 +10,24 @@ const HTTP_METHODS = ["get", "post", "put", "delete", "patch", "all"];
  * Middleware to dynamically serve versioned APIs from memory.
  * Auto-mounts routes from each version's `routes/` folder with method detection.
  */
-export function versionMiddleware(allowedVersions) {
+function versionMiddleware(allowedVersions) {
   return (req, res, next) => {
-    const match = /^\/(v[0-9]+)(\/.*)?$/.exec(req.path);
-    if (!match) return res.status(400).send("Missing API version in path");
+    // Prefer Express route param when mounted as /api/:version
+    let version = req.params && req.params.version;
 
-    const version = match[1];
-    if (!allowedVersions.includes(version)) {
-      return res.status(400).send("Invalid API version");
+    // Fallback: extract from path when not mounted that way
+    if (!version) {
+      const match = /^\/(v[0-9])(\/.*)?$/.exec(req.path);
+      if (!match) return res.status(400).send('Missing API version in path');
+      version = match[1];
+      // Strip the /vX prefix only in this scenario
+      req.url = req.url.replace(`/${version}`, '') || '/';
     }
 
-    // Strip the /vX prefix from the path
-    req.url = req.url.replace(`/${version}`, "") || "/";
+     if (!allowedVersions.includes(version)) {
+       return res.status(400).send('Invalid API version');
+     }
+    // If version came from params the URL is already cleaned.
 
     if (!versionRouterCache[version]) {
       try {
@@ -30,7 +36,8 @@ export function versionMiddleware(allowedVersions) {
 
         Object.keys(codeTree).forEach(filePath => {
           if (filePath.startsWith("routes/") && filePath.endsWith(".js")) {
-            const routePath = "/" + filePath.replace(/^routes\//, "").replace(/\.js$/, "");
+            const routePath = "/";  
+            filePath.replace(/^routes\//, "").replace(/\.js$/, "");
             const routeModule = codeTree[filePath];
 
             if (typeof routeModule === "function") {
@@ -61,3 +68,5 @@ export function versionMiddleware(allowedVersions) {
     return versionRouterCache[version](req, res, next);
   };
 }
+
+module.exports = { versionMiddleware };
