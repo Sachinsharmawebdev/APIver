@@ -1,0 +1,21 @@
+{
+  "name": "apiver",
+  "version": "1.0.0",
+  "description": "This tool is use for codeVersioning",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "sachin sharma",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "chalk": "^5.5.0",
+    "commander": "^14.0.0",
+    "diff": "^8.0.2",
+    "fs-extra": "^11.3.1",
+    "path": "^0.12.7"
+  }
+}

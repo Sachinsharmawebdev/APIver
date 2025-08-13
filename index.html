@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>APIver — API Versioning Without Duplication</title>
+  <style>
+    :root{
+      --bg-1:#071023;
+      --bg-2:#071429;
+      --card: rgba(255,255,255,0.03);
+      --muted:#94a3b8;
+      --accent:#6ee7b7;
+      --accent-2:#06b6d4;
+      --glass: rgba(255,255,255,0.02);
+      --mono: Menlo, Monaco, monospace;
+      --desktop-gap: 20px;
+      --sidebar-width: 320px;
+      --mobile-header-h: 64px;
+    }
+
+    /* Global */
+    html { scroll-behavior: smooth; }
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+      color: #e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .container{
+      max-width:1200px;
+      margin: 28px auto;
+      padding: 0 20px;
+    }
+
+    header.site-header{
+      display:flex;
+      align-items:center;
+      gap:18px;
+      margin-bottom:18px;
+    }
+    header.site-header h1{margin:0;font-size:28px}
+    .subtitle{color:var(--muted);margin-top:6px}
+
+    /* Desktop layout */
+    .layout{display:grid;grid-template-columns: var(--sidebar-width) 1fr;gap:var(--desktop-gap);align-items:start}
+
+    .sidebar{
+      position:sticky;top:28px;height:calc(100vh - 56px);padding:18px;border-radius:12px;background:linear-gradient(180deg, rgba(10,17,28,0.6), rgba(6,10,18,0.4));backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(2,6,23,0.6);
+      overflow:auto;
+    }
+    .sidebar .badge{display:inline-block;background:var(--glass);padding:6px 8px;border-radius:8px;color:var(--muted);font-size:13px}
+    .nav a{display:block;color:var(--muted);text-decoration:none;padding:10px;border-radius:8px;margin:6px 0;transition:all .2s}
+    .nav a:hover{background:rgba(255,255,255,0.02);color:var(--accent)}
+    .nav a.active{background:linear-gradient(90deg, rgba(110,231,183,0.12), rgba(6,182,212,0.06));color:var(--accent)}
+
+    main.content{
+      display:block;
+    }
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:20px;border-radius:12px;margin-top:18px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
+    pre{background:#041029;padding:14px;border-radius:8px;overflow:auto;font-family:var(--mono);font-size:13px;color:#cfeffd}
+    code{font-family:var(--mono);font-size:13px}
+    .small{font-size:13px;color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns:1fr 340px;gap:20px}
+    .cmd{background:#071b2a;padding:10px;border-radius:8px;color:#9fe2d8;white-space:pre-wrap}
+
+    /* Diagrams */
+    .diagram{background:#031024;padding:14px;border-radius:8px;margin-top:12px}
+    .diagram svg{width:100%;height:auto;display:block}
+
+    footer{color:var(--muted);margin-top:28px;font-size:13px}
+
+    /* Mobile specific header: shown only on small screens */
+    .mobile-header{display:none}
+
+    /* Responsive rules */
+    @media (max-width: 980px){
+      .container{margin:12px auto;padding:0 12px}
+      .layout{grid-template-columns:1fr;}
+      .sidebar{display:none}
+      .mobile-header{display:flex;position:sticky;top:0;z-index:999;padding:12px 8px;gap:12px;background:linear-gradient(90deg, rgba(6,11,19,0.6), rgba(10,18,28,0.6));backdrop-filter: blur(6px);overflow:auto}
+      .mobile-header a{display:inline-block;color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:8px;white-space:nowrap}
+      .mobile-header a.active{background:rgba(110,231,183,0.08);color:var(--accent)}
+      .card{padding:16px;margin-top:12px}
+      :root{--mobile-offset:72px}
+      section{scroll-margin-top:var(--mobile-offset)}
+    }
+
+    /* Desktop offset for anchor links */
+    @media (min-width:981px){
+      :root{--desktop-offset:28px}
+      section{scroll-margin-top:var(--desktop-offset)}
+      .mobile-header{display:none}
+    }
+
+    /* subtle animated accent */
+    .accent-glow{position:relative}
+    .accent-glow:after{content:'';position:absolute;inset:0;border-radius:12px;box-shadow:0 8px 40px rgba(6,182,212,0.06);pointer-events:none;opacity:0;transition:opacity .25s}
+    .accent-glow:hover:after{opacity:1}
+
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Mobile header (sticky only on small screens) -->
+    <nav class="mobile-header" aria-label="Quick navigation">
+      <a href="#intro">Intro</a>
+      <a href="#features">Features</a>
+      <a href="#structure">Structure</a>
+      <a href="#cli">CLI</a>
+      <a href="#workflow">Workflow</a>
+    </nav>
+
+    <header class="site-header">
+      <div>
+        <h1>APIver</h1>
+        <div class="subtitle">API versioning without duplication — single repo, patch-based snapshots, in-memory runtime</div>
+      </div>
+      <div style="margin-left:auto;text-align:right">
+        <div class="badge">CLI • Runtime • Secure .APIver</div>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <!-- Sidebar for desktop -->
+      <aside class="sidebar" aria-label="Main navigation">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <strong style="color:#dffaf3">Quick links</strong>
+          <span class="badge">v1 • v2</span>
+        </div>
+        <nav class="nav">
+          <a href="#intro">Introduction</a>
+          <a href="#features">Key Features</a>
+          <a href="#structure">Folder Structure</a>
+          <a href="#install">Installation</a>
+          <a href="#cli">CLI Reference</a>
+          <a href="#workflow">Workflows</a>
+          <a href="#tracing">Tracing</a>
+          <a href="#diagrams">Diagrams</a>
+          <a href="#usecases">Use Cases</a>
+        </nav>
+      </aside>
+
+      <!-- Main content -->
+      <main class="content">
+
+        <section id="intro" class="card accent-glow">
+          <h2>Introduction</h2>
+          <p class="small">APIver is a Git-like tool focused solely on API versioning. It keeps a single source code repository and stores versions as compressed & encrypted change sets (patches) in a hidden <code>.APIver</code> folder. In production, versions are reconstructed and executed <strong>entirely in memory</strong> to avoid disk I/O and keep performance predictable.</p>
+
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <a class="cmd" href="#cli" style="text-decoration:none">View CLI</a>
+            <a class="cmd" href="#workflow" style="text-decoration:none">Workflow</a>
+          </div>
+        </section>
+
+        <section id="features" class="card">
+          <h2>Key Features</h2>
+          <ul>
+            <li>Single codebase — no full duplication between API versions.</li>
+            <li>Patch-based snapshots — only store diffs, not full files.</li>
+            <li>Compressed & encrypted storage in <code>.APIver</code>.</li>
+            <li>CLI for init/new/switch/diff/inspect/hotfix.</li>
+            <li>In-memory loader for production — register many versions without disk reads.</li>
+            <li>Built-in tracing to map runtime errors to exact patch IDs.</li>
+            <li>Hotfix mode to apply urgent fixes without full rebuilds.</li>
+          </ul>
+        </section>
+
+        <section id="structure" class="card">
+          <h2>Folder Structure</h2>
+          <pre><code>project-root/
+├─ src/                # app code (routes, services)
+├─ .APIver/            # managed by APIver (encrypted, compressed)
+│  ├─ meta.json
+│  ├─ v1/
+│  │  └─ base.zip
+│  ├─ v2/
+│  │  └─ changes.zip
+└─ versions/active/    # visible in dev, only the current editable version
+</code></pre>
+        </section>
+
+        <section id="cli" class="card">
+          <h2>CLI Reference</h2>
+          <p class="small">All CLI commands are available via <code>npx apiver ...</code> after installing the package.</p>
+
+          <div class="code-block">
+            <div class="small">Init first version (snapshot current working code as v1)</div>
+            <pre class="cmd">npx apiver init v1</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="small">Create a new version from an existing one</div>
+            <pre class="cmd">npx apiver new v2 from v1</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="small">Switch active version for local editing</div>
+            <pre class="cmd">npx apiver switch v2</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="small">Show diff between two versions</div>
+            <pre class="cmd">npx apiver diff v1 v3</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="small">Inspect a file as used in production</div>
+            <pre class="cmd">npx apiver inspect v2 routes/users.js</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="small">Apply a hotfix to a running version</div>
+            <pre class="cmd">npx apiver hotfix v2 routes/users.js</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="small">Serve versions from an Express app (example)</div>
+            <pre class="cmd">// server.js
+const express = require('express');
+const { loadVersionsInMemory } = require('apiver');
+
+const app = express();
+const versions = loadVersionsInMemory(['v1','v2']);
+
+Object.entries(versions).forEach(([version, files]) =&gt; {
+  Object.keys(files).filter(f =&gt; f.startsWith('routes/')).forEach(routeFile =&gt; {
+    const handler = eval(files[routeFile]);
+    const name = routeFile.replace('routes/','').replace('.js','');
+    app.use(`/${version}/${name}`, handler);
+  });
+});
+
+app.listen(3000);
+</pre>
+          </div>
+        </section>
+
+        <section id="workflow" class="card">
+          <h2>Workflows</h2>
+
+          <h3>Development</h3>
+          <ol>
+            <li>Init the first version: <code>npx apiver init v1</code></li>
+            <li>Create a new version to work on: <code>npx apiver new v2 from v1</code></li>
+            <li>Switch: <code>npx apiver switch v2</code> — your IDE sees only <code>versions/active/</code>.</li>
+            <li>Edit files; file watcher creates encrypted patches in <code>.APIver/v2/</code>.</li>
+            <li>Commit <code>.APIver</code> (or push to private registry) so CI can build with APIver artifacts.</li>
+          </ol>
+
+          <h3>Production</h3>
+          <ol>
+            <li>Install APIver as a dependency on server image.</li>
+            <li>On boot, call <code>loadVersionsInMemory(['v1','v2'])</code>. APIver reconstructs versions in memory (base + patches).</li>
+            <li>Register route handlers from the in-memory files (no disk reads to serve requests).</li>
+            <li>If a hotfix is needed, use <code>npx apiver hotfix</code> to apply an extra patch and reload that version's memory map.</li>
+          </ol>
+        </section>
+
+        <section id="tracing" class="card">
+          <h2>Tracing & Troubleshooting</h2>
+          <p class="small">Every reconstructed file and registered route carries metadata:</p>
+          <pre><code>{
+  version: 'v2',
+  file: 'routes/users.js',
+  patchId: 'p23d91',
+  createdBy: 'alice',
+  timestamp: '2025-08-12T10:45Z'
+}
+</code></pre>
+
+          <p class="small">When an error occurs, logs include the version + patchId. Use the CLI to inspect the exact patch:</p>
+          <pre class="cmd">npx apiver show patch p23d91</pre>
+
+          <p class="small">Hotfix flow:</p>
+          <pre class="cmd">npx apiver hotfix v2 routes/users.js
+# edit, save, applies additional patch, memory reload</pre>
+        </section>
+
+        <section id="diagrams" class="card">
+          <h2>Diagrams</h2>
+
+          <div class="diagram" aria-hidden="true">
+            <!-- DEV WORKFLOW SVG -->
+            <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Development workflow diagram">
+              <defs>
+                <linearGradient id="g1" x1="0" x2="1">
+                  <stop offset="0" stop-color="#072033"/>
+                  <stop offset="1" stop-color="#041229"/>
+                </linearGradient>
+                <marker id="m1" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto">
+                  <path d="M0,0 L0,6 L9,3 z" fill="#06b6d4"/>
+                </marker>
+              </defs>
+
+              <rect x="8" y="8" rx="8" width="884" height="244" fill="#021026" stroke="#06263a" />
+
+              <rect x="24" y="20" width="220" height="64" rx="8" fill="url(#g1)" stroke="#08304a"/>
+              <text x="36" y="44" fill="#dffaf3" font-size="14">Developer IDE</text>
+              <text x="36" y="60" fill="#94a3b8" font-size="11">(versions/active)</text>
+
+              <rect x="260" y="20" width="240" height="64" rx="8" fill="url(#g1)" stroke="#08304a"/>
+              <text x="276" y="44" fill="#dffaf3" font-size="14">APIver CLI</text>
+              <text x="276" y="60" fill="#94a3b8" font-size="11">(init/new/switch/diff)</text>
+
+              <rect x="540" y="20" width="300" height="64" rx="8" fill="url(#g1)" stroke="#08304a"/>
+              <text x="556" y="44" fill="#dffaf3" font-size="14">.APIver (encrypted)</text>
+              <text x="556" y="60" fill="#94a3b8" font-size="11">base.zip / changes.zip</text>
+
+              <line x1="244" y1="52" x2="260" y2="52" stroke="#06b6d4" stroke-width="2" marker-end="url(#m1)"/>
+              <line x1="500" y1="52" x2="540" y2="52" stroke="#06b6d4" stroke-width="2" marker-end="url(#m1)"/>
+
+              <rect x="24" y="110" width="220" height="64" rx="8" fill="url(#g1)" stroke="#08304a"/>
+              <text x="36" y="136" fill="#dffaf3" font-size="14">File Watcher</text>
+              <text x="36" y="152" fill="#94a3b8" font-size="11">Generates encrypted patches</text>
+
+              <rect x="260" y="110" width="580" height="64" rx="8" fill="url(#g1)" stroke="#08304a"/>
+              <text x="276" y="136" fill="#dffaf3" font-size="14">versions/active (reconstructed)</text>
+              <text x="276" y="152" fill="#94a3b8" font-size="11">visible only for current dev version</text>
+
+              <line x1="144" y1="84" x2="144" y2="110" stroke="#06b6d4" stroke-width="2"/>
+              <line x1="380" y1="84" x2="380" y2="110" stroke="#06b6d4" stroke-width="2"/>
+            </svg>
+          </div>
+
+          <div class="diagram" aria-hidden="true">
+            <!-- PROD WORKFLOW SVG -->
+            <svg viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Production workflow diagram">
+              <rect x="8" y="8" rx="8" width="884" height="244" fill="#021026" stroke="#06263a" />
+
+              <rect x="36" y="28" width="200" height="64" rx="8" fill="#072033" stroke="#0ea5a1"/>
+              <text x="56" y="54" fill="#dffaf3" font-size="13">Server Boot</text>
+
+              <rect x="270" y="28" width="220" height="64" rx="8" fill="#072033" stroke="#06b6d4"/>
+              <text x="292" y="54" fill="#dffaf3" font-size="13">APIver Loader</text>
+              <text x="292" y="70" fill="#94a3b8" font-size="11">(decrypt + reconstruct in memory)</text>
+
+              <rect x="528" y="18" width="320" height="84" rx="8" fill="#072033" stroke="#06b6d4"/>
+              <text x="548" y="40" fill="#dffaf3" font-size="13">In-memory Versions</text>
+              <text x="548" y="58" fill="#94a3b8" font-size="11">v1: routes/users.js</text>
+              <text x="548" y="72" fill="#94a3b8" font-size="11">v2: routes/users.js (patched)</text>
+
+              <line x1="236" y1="60" x2="270" y2="60" stroke="#06b6d4" stroke-width="2" marker-end="url(#m1)"/>
+              <line x1="490" y1="60" x2="528" y2="60" stroke="#06b6d4" stroke-width="2" marker-end="url(#m1)"/>
+
+              <rect x="36" y="120" width="820" height="96" rx="8" fill="#031225" stroke="#04283a" />
+              <text x="52" y="148" fill="#dffaf3">Incoming Request: /v2/users</text>
+              <text x="52" y="170" fill="#94a3b8">Router picks handler from in-memory map → invokes function with metadata (version, patchId)</text>
+              <text x="52" y="188" fill="#94a3b8">If error, logs include version & patchId so operator can inspect exact patch</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="usecases" class="card">
+          <h2>Use Cases</h2>
+          <ul>
+            <li>Maintain v1 while developing v3 without duplication.</li>
+            <li>Instant version switching during dev without <code>git checkout</code>.</li>
+            <li>Reduced prod memory footprint by sharing unchanged code.</li>
+            <li>Apply secure patches without exposing raw code.</li>
+          </ul>
+        </section>
+
+        <footer class="card">
+          © APIver — Design & Spec • Generated by assistant
+        </footer>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Highlight active nav links (both sidebar and mobile header)
+    (function(){
+      const links = Array.from(document.querySelectorAll('a[href^="#"]'));
+      const sections = links.map(l=>document.querySelector(l.getAttribute('href'))).filter(Boolean);
+
+      const obs = new IntersectionObserver(entries=>{
+        entries.forEach(e=>{
+          const id = e.target.id;
+          const active = e.isIntersecting;
+          links.forEach(a=>{
+            if(a.getAttribute('href') === '#'+id){
+              a.classList.toggle('active', active);
+            }
+          });
+        });
+      },{root:null,rootMargin:'-40% 0px -40% 0px',threshold:0});
+
+      sections.forEach(s=>obs.observe(s));
+
+      // Ensure clicking a link on mobile collapses any menus and keeps header visible
+      links.forEach(a=>{
+        a.addEventListener('click', ()=>{
+          // small tweak: on mobile ensure a tiny delay so header stays sticky before jump
+          setTimeout(()=>window.scrollBy(0, -8), 0);
+        });
+      });
+    })();
+    // Add accent glow effect on hover
+    document.querySelectorAll('.accent-glow').forEach(el => {
+        el.addEventListener('mouseover', () => {
+        el.classList.add('hover');
+        });
+        el.addEventListener('mouseout', () => {
+        el.classList.remove('hover');
+        });
+    });
+  </script>
+</body>
+</html>
+  
