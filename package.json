@@ -1,21 +1,52 @@
 {
   "name": "apiver",
-  "version": "1.0.0",
-  "description": "This tool is use for codeVersioning",
+  "version": "1.0.1",
+  "description": "Advanced API Versioning Without Duplication - Git-like CLI tool for managing multiple API versions in a single codebase",
   "main": "index.js",
+  "bin": {
+    "apiver": "bin/apiver.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "api",
+    "versioning",
+    "cli",
+    "git-like",
+    "version-control",
+    "api-versioning",
+    "patch-management",
+    "hotfix",
+    "production-deployment"
+  ],
   "author": "sachin sharma",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sachinsharma/apiver.git"
+  },
+  "homepage": "https://github.com/sachinsharma/apiver#readme",
+  "bugs": {
+    "url": "https://github.com/sachinsharma/apiver/issues"
+  },
   "dependencies": {
     "adm-zip": "^0.5.16",
     "chalk": "^5.5.0",
     "commander": "^14.0.0",
     "diff": "^8.0.2",
-    "fs-extra": "^11.3.1",
-    "path": "^0.12.7"
-  }
+    "fs-extra": "^11.3.1"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "serveVersionedAPI.js",
+    "versionMiddleware.js",
+    "runtimeLoader.js",
+    "README.md"
+  ]
 }
