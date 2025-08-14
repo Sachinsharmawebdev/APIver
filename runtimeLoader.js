@@ -26,6 +26,10 @@ function loadVersion(versionName) {
     }
 
     const metaPath = path.join('.APIver', 'meta.json');
+    if (!fs.existsSync(metaPath)) {
+        throw new Error('APIver meta not found. Did you run `apiver init`?');
+    }
+
     const meta = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
 
     const versionInfo = meta.versions[versionName];
@@ -37,6 +41,9 @@ function loadVersion(versionName) {
     let codeTree = {};
     if (versionInfo.snapshot) {
         const snapFile = path.join('.APIver', 'snapshots', versionInfo.snapshot);
+        if (!fs.existsSync(snapFile)) {
+            throw new Error(`Snapshot file not found: ${versionInfo.snapshot}`);
+        }
         codeTree = JSON.parse(decryptAndDecompress(snapFile));
     } else {
         throw new Error(`No snapshot found for version ${versionName}`);
@@ -46,6 +53,9 @@ function loadVersion(versionName) {
     const patchesToApply = versionInfo.patchesAfterSnapshot || [];
     patchesToApply.forEach(patchId => {
         const patchFile = path.join('.APIver', 'patches', patchId);
+        if (!fs.existsSync(patchFile)) {
+            throw new Error(`Patch file not found: ${patchId}`);
+        }
         const patchData = decryptAndDecompress(patchFile);
         codeTree = applyPatch(codeTree, JSON.parse(patchData));
     });

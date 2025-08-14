@@ -40,13 +40,8 @@ program
   .action(inspectFile);
 
 program
-  .command('hotfix <version> <filePath>')
-  .description('Apply a hotfix to a version')
-  .action(hotfixFile)
-   // Accept either legacy “hotfix <version> <filePath>” or
-   // the new syntax the test uses: “hotfix <name> from <version>”
   .command('hotfix <arg1> [arg2] [arg3]')
-  .description('Apply a hotfix')
+  .description('Create a hotfix for a version (supports both legacy and new syntax)')
   .action(hotfixFile);
 
 program.parse(process.argv);

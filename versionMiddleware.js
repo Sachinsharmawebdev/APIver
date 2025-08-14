@@ -36,8 +36,7 @@ function versionMiddleware(allowedVersions) {
 
         Object.keys(codeTree).forEach(filePath => {
           if (filePath.startsWith("routes/") && filePath.endsWith(".js")) {
-            const routePath = "/";  
-            filePath.replace(/^routes\//, "").replace(/\.js$/, "");
+            const routePath = "/" + filePath.replace(/^routes\//, "").replace(/\.js$/, "");
             const routeModule = codeTree[filePath];
 
             if (typeof routeModule === "function") {
