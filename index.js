@@ -1,5 +1,6 @@
 module.exports = {
     ...require('./runtimeLoader'),
     ...require('./serveVersionedAPI'),
-    diff: require('./utils/diff'),
+    ...require('./versionMiddleware'),
+    diff: require('./lib/utils/diff'),
 };

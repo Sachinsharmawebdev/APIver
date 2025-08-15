@@ -1,7 +1,6 @@
 {
   "versions": {
     "v1": { "type": "full" },
-    "v2": { "base": "v1", "type": "patch" },
-    "v3": { "base": "v2", "type": "patch" }
+    "v2": { "base": "v1", "type": "patch" }
   }
 }
