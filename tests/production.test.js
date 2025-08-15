@@ -4,9 +4,6 @@ const path = require('path');
 const fs = require('fs-extra');
 const { execSync } = require('child_process');
 
-const serveVersionedAPI = require('../serveVersionedAPI');
-const { versionMiddleware } = require('../versionMiddleware');
-
 const cliPath = path.join(__dirname, '..', 'bin', 'apiver.js');
 const testWorkspace = path.join(__dirname, 'production-test');
 
@@ -21,7 +18,8 @@ describe('Production Tests', () => {
     
     // Initialize test version
     execSync(`node ${cliPath} init v1`);
-    fs.writeFileSync('versions/active/test.js', 'module.exports = (req, res) => res.json({ version: "v1" });');
+    fs.ensureDirSync('versions/active/routes');
+    fs.writeFileSync('versions/active/routes/test.js', 'module.exports = (req, res) => res.json({ version: "v1" });');
     execSync(`node ${cliPath} commit -m "v1 test"`);
   });
 
@@ -36,6 +34,8 @@ describe('Production Tests', () => {
   });
 
   test('should serve versioned APIs', async () => {
+    // Require middleware after directory change
+    const { versionMiddleware } = require('apiver');
     const app = express();
     app.use('/api/:version', versionMiddleware(['v1']));
     
@@ -45,6 +45,8 @@ describe('Production Tests', () => {
   });
 
   test('should handle non-existent versions', async () => {
+    // Require middleware after directory change
+    const { versionMiddleware } = require('apiver');
     const app = express();
     app.use('/api/:version', versionMiddleware(['v1']));
     
