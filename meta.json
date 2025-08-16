@@ -1,6 +1,0 @@
-{
-  "versions": {
-    "v1": { "type": "full" },
-    "v2": { "base": "v1", "type": "patch" }
-  }
-}

@@ -6,6 +6,8 @@ const createNewVersion = require('../lib/new');
 const inspectFile = require('../lib/inspect');
 const hotfixFile = require('../lib/hotfix');
 const switchVersion = require('../lib/switch');
+const copyVersion = require('./lib/copy');
+const deleteVersion = require('./lib/delete');
 
 program
   .name('apiver')
@@ -43,5 +45,15 @@ program
   .command('hotfix <arg1> [arg2] [arg3]')
   .description('Create a hotfix for a version (supports both legacy and new syntax)')
   .action(hotfixFile);
+
+program
+  .command('copy <sourceVersion> <targetVersion>')
+  .description('Copy code from one version to another')
+  .action(copyVersion);
+
+program
+  .command('delete <version>')
+  .description('Delete a version if no other version depends on it')
+  .action(deleteVersion);
 
 program.parse(process.argv);

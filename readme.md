@@ -18,9 +18,7 @@ APIver is a **Git-like API versioning tool** that allows you to manage multiple 
 ## 📦 Installation
 
 ```bash
-npm install -D apiver
-# or
-yarn add -D apiver
+npm install -g apiver
 ```
 
 ---
@@ -35,6 +33,9 @@ yarn add -D apiver
 | `npx apiver diff v1 v3` | Compare differences between two versions |
 | `npx apiver inspect v2 routes/users.js` | Inspect a file in a specific version |
 | `npx apiver hotfix v2 routes/users.js` | Apply a hotfix to a version |
+| `npx apiver copy v2 to v1` | Apply changes to v1 from v2 |
+| `npx apiver delete v2` | Delete a specific version |
+
 
 ---
 
@@ -75,7 +76,14 @@ my-project/
    ```bash
    npx apiver commit -m "Updated user route for v2"
    ```
-
+6. **Copy Version**
+   ```bash
+   npx apiver copy <source_version> to <target_version>
+   ```
+7. **Delete Version**
+   ```bash
+   npx apiver delete <target_version>
+   ```
 ---
 
 ## 🏭 Production Workflow
@@ -129,5 +137,3 @@ You can open `index.html` from this repo locally or host it on GitHub Pages / Ve
 MIT License – Use freely with attribution.
 
 ---
-
-*Generated and placed into the project's canvas by the assistant.*
