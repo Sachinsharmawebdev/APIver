@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+
 const { program } = require('commander');
 const init = require('../lib/init');
 const commit = require('../lib/commit');
