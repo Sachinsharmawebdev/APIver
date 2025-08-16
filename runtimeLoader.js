@@ -1,18 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-const zlib = require('zlib');
-const crypto = require('crypto');
 const { applyPatch } = require('./lib/utils/diff');
+const { decryptAndDecompress } = require('./lib/utils/crypto');
 
 const memoryCache = {};
-const ALGO = 'aes-256-ctr';
-const SECRET = process.env.APIVER_SECRET || 'apiver-secret-key-that-is-32-chars-long';
 
-function decryptAndDecompress(filePath) {
+/**
+ * Read a file from disk, decrypt and decompress it into string
+ * @param {string} filePath
+ * @returns {string} decrypted file content
+ */
+function readDecryptedFile(filePath) {
     const encrypted = fs.readFileSync(filePath);
-    const decipher = crypto.createDecipher(ALGO, SECRET);
-    const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-    return zlib.gunzipSync(decrypted).toString('utf8');
+    return decryptAndDecompress(encrypted).toString('utf8');
 }
 
 /**
@@ -44,7 +44,8 @@ function loadVersion(versionName) {
         if (!fs.existsSync(snapFile)) {
             throw new Error(`Snapshot file not found: ${versionInfo.snapshot}`);
         }
-        codeTree = JSON.parse(decryptAndDecompress(snapFile));
+        const decryptedSnapshot = readDecryptedFile(snapFile);
+        codeTree = JSON.parse(decryptedSnapshot);
     } else {
         throw new Error(`No snapshot found for version ${versionName}`);
     }
@@ -56,7 +57,7 @@ function loadVersion(versionName) {
         if (!fs.existsSync(patchFile)) {
             throw new Error(`Patch file not found: ${patchId}`);
         }
-        const patchData = decryptAndDecompress(patchFile);
+        const patchData = readDecryptedFile(patchFile);
         codeTree = applyPatch(codeTree, JSON.parse(patchData));
     });
 

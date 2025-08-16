@@ -16,6 +16,6 @@ build/
 dist/
 
 # APIver specific
-.APIver/
+.APIver/*
 meta.json
 coverage/
