@@ -1,4 +1,4 @@
-const { loadVersion } = require("./runtimeLoader");
+const { loadVersion } = require("./lib/runtimeLoader");
 const express = require("express");
 
 const versionRouterCache = {};
@@ -8,9 +8,9 @@ const HTTP_METHODS = ["get", "post", "put", "delete", "patch", "all"];
 
 /**
  * Middleware to dynamically serve versioned APIs from memory.
- * Auto-mounts routes from each version's `routes/` folder with method detection.
+ * Can auto-mount routes or use custom handler (controller function or router).
  */
-function versionMiddleware(allowedVersions) {
+function versionMiddleware(allowedVersions, handler = null) {
   return (req, res, next) => {
     // Prefer Express route param when mounted as /api/:version
     let version = req.params && req.params.version;
@@ -27,8 +27,27 @@ function versionMiddleware(allowedVersions) {
      if (!allowedVersions.includes(version)) {
        return res.status(400).send('Invalid API version');
      }
-    // If version came from params the URL is already cleaned.
+    
+    // If custom handler provided, use it directly
+    if (handler) {
+      try {
+        const versionedCode = loadVersion(version);
+        req.apiVersion = version;
+        req.versionedCode = versionedCode;
+        
+        if (typeof handler === 'function') {
+          // Controller function
+          return handler(req, res, next);
+        } else if (handler && typeof handler === 'object') {
+          // Express Router
+          return handler(req, res, next);
+        }
+      } catch (err) {
+        return res.status(500).send(`Failed to load ${version}: ${err.message}`);
+      }
+    }
 
+    // Auto-mount from routes/ folder
     if (!versionRouterCache[version]) {
       try {
         const codeTree = loadVersion(version); // Load code from patches
@@ -68,4 +87,13 @@ function versionMiddleware(allowedVersions) {
   };
 }
 
-module.exports = { versionMiddleware };
+/**
+ * Clear version router cache (useful for testing)
+ */
+function clearCache() {
+  Object.keys(versionRouterCache).forEach(key => {
+    delete versionRouterCache[key];
+  });
+}
+
+module.exports = { versionMiddleware, clearCache };

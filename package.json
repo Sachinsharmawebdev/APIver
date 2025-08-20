@@ -1,6 +1,6 @@
 {
   "name": "apiver",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Advanced API Versioning Without Duplication - Git-like CLI tool for managing multiple API versions in a single codebase",
   "main": "index.js",
   "bin": {

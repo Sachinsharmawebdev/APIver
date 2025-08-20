@@ -10,9 +10,9 @@ module.exports = {
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   testMatch: [
-    '**/tests/**/*.test.js'
+    '**/__tests__/**/*.test.js',
+    '**/__tests__/**/*.js'
   ],
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   verbose: true,
   forceExit: true,
   detectOpenHandles: true

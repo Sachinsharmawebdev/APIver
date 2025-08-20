@@ -6,8 +6,15 @@ const createNewVersion = require('../lib/new');
 const inspectFile = require('../lib/inspect');
 const hotfixFile = require('../lib/hotfix');
 const switchVersion = require('../lib/switch');
-const copyVersion = require('./lib/copy');
-const deleteVersion = require('./lib/delete');
+const copyVersion = require('../lib/copy');
+const deleteVersion = require('../lib/delete');
+const diffVersions = require('../lib/diff');
+const showPatch = require('../lib/show');
+const listVersions = require('../lib/list');
+const { cleanup, setupAutoCleanup } = require('../lib/cleanup');
+
+// Setup auto cleanup
+setupAutoCleanup();
 
 program
   .name('apiver')
@@ -44,16 +51,40 @@ program
 program
   .command('hotfix <arg1> [arg2] [arg3]')
   .description('Create a hotfix for a version (supports both legacy and new syntax)')
-  .action(hotfixFile);
+  .action((arg1, arg2, arg3, opts) => {
+    console.log('DEBUG: CLI hotfix args:', arg1, arg2, arg3);
+    return hotfixFile(arg1, arg2, arg3, opts);
+  });
 
 program
-  .command('copy <sourceVersion> <targetVersion>')
+  .command('copy <sourceVersion> to <targetVersion>')
   .description('Copy code from one version to another')
-  .action(copyVersion);
+  .option('--force', 'Overwrite target version if it exists')
+  .action((sourceVersion, _, targetVersion, opts) => copyVersion(sourceVersion, targetVersion, opts));
 
 program
   .command('delete <version>')
   .description('Delete a version if no other version depends on it')
   .action(deleteVersion);
+
+program
+  .command('diff <version1> <version2>')
+  .description('Compare differences between two versions')
+  .action(diffVersions);
+
+program
+  .command('show patch <patchId>')
+  .description('Show details of a specific patch')
+  .action(showPatch);
+
+program
+  .command('list')
+  .description('List all available API versions')
+  .action(listVersions);
+
+program
+  .command('cleanup')
+  .description('Clean up unnecessary files and folders')
+  .action(cleanup);
 
 program.parse(process.argv);
