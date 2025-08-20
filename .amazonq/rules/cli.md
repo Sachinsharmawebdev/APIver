@@ -1,1 +1,0 @@
-use cmd and bash also powershell permitted by me
