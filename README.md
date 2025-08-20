@@ -1,133 +1,99 @@
-# APIver - Advanced API Versioning Without Duplication
+# APIver - Git-like API Versioning
 
-APIver is a **Git-like API versioning tool** that allows you to manage multiple API versions inside a **single codebase** without duplication. It stores **changes as compressed + encrypted patches** in a `.APIver` folder and can **load any version entirely in memory** in production for high performance.
-
----
+Manage multiple API versions in a single codebase without duplication. Store changes as encrypted patches and serve versions from memory for zero-latency production performance.
 
 ## 🚀 Features
 
-- **Single Codebase** – No messy code duplication for multiple versions.
-- **Compressed + Encrypted Storage** – Protects code patches from tampering.
-- **Git-like CLI** – Easy to learn for developers familiar with Git.
-- **In-Memory Prod Loader** – Versions are preloaded in memory for zero impact on performance.
-- **Built-in Tracing** – Trace production errors directly to their version & patch.
-- **Hotfix Mode** – Apply fixes directly to a version in production.
-
----
+- **Git-like Workflow** – Edit files directly in project root
+- **Memory Serving** – Zero-latency version loading
+- **Encrypted Storage** – Secure patch and snapshot storage
+- **Express Integration** – 2-line setup with middleware
+- **Array Loading** – Load multiple versions simultaneously
+- **Controller Support** – Works with functions and routers
 
 ## 📦 Installation
 
 ```bash
-npm install -D apiver
-# or
-yarn add -D apiver
+npm install apiver
 ```
 
----
+## ⚡ Quick Start
+
+### 1. Initialize & Create Versions
+```bash
+npx apiver init v1
+# Edit your API files
+npx apiver commit -m "Initial v1"
+
+npx apiver new v2 from v1
+# Edit files for v2
+npx apiver commit -m "Enhanced v2"
+```
+
+### 2. Express Integration (2 lines)
+```javascript
+const { loadVersion, versionMiddleware } = require('apiver');
+
+loadVersion(['v1', 'v2']); // Load into memory
+app.use('/api/:version', versionMiddleware(['v1', 'v2'])); // Serve
+```
+
+### 3. API Endpoints
+- `GET /api/v1/users` → v1 response
+- `GET /api/v2/users` → v2 response
 
 ## 🛠 CLI Commands
 
-| Command | Description |
-| ------- | ----------- |
-| `npx apiver init v1` | Initialize APIver with first version |
-| `npx apiver new v2 from v1` | Create new version based on another |
-| `npx apiver switch v3` | Switch working copy to a specific version |
-| `npx apiver diff v1 v3` | Compare differences between two versions |
-| `npx apiver inspect v2 routes/users.js` | Inspect a file in a specific version |
-| `npx apiver hotfix v2 routes/users.js` | Apply a hotfix to a version |
-
----
-
-## 📂 Folder Structure
-
-```
-my-project/
- ├── src/                # Main source code
- ├── .APIver/            # Encrypted & compressed version patches
- ├── versions/active/    # Current active version
- ├── package.json
- └── README.md
-```
-
----
-
-## 🔄 Development Workflow
-
-1. **Initialize First Version**
-   ```bash
-   npx apiver init v1
-   ```
-
-2. **Create a New Version**
-   ```bash
-   npx apiver new v2 from v1
-   ```
-
-3. **Switch Versions**
-   ```bash
-   npx apiver switch v3
-   ```
-
-4. **Edit Code**  
-   Work only inside `versions/active/`.
-
-5. **Commit Changes**
-   ```bash
-   npx apiver commit -m "Updated user route for v2"
-   ```
-
----
-
-## 🏭 Production Workflow
-
-- APIver loads **only allowed versions** in memory.
-- All API routes are served from memory for minimal latency.
-- Error logs automatically tag the **version & patch ID**.
-
----
-
-## 🐞 Tracing Issues in Production
-
-Example error log:
-```
-[ERROR] v2/routes/users.js (patch p23d91)
-```
-Trace the patch:
 ```bash
-npx apiver show patch p23d91
+npx apiver init v1              # Initialize
+npx apiver new v2 from v1       # Create version
+npx apiver switch v2            # Switch version
+npx apiver commit -m "msg"      # Commit changes
+npx apiver list                 # Show versions
+npx apiver diff v1 v2           # Compare
+npx apiver hotfix v1 file.js    # Apply hotfix
+npx apiver delete v1            # Delete version
 ```
 
----
+## 🏗 Architecture
 
-## 🔥 Hotfix in Production
+```
+project/
+├── routes/users.js     # Your API files (edit directly)
+├── controllers/        # Your controllers
+├── .apiver/
+│   ├── snapshots/      # Encrypted full versions
+│   ├── patches/        # Incremental changes
+│   └── meta.json       # Version metadata
+└── package.json
+```
+
+## 🎯 Advanced Usage
+
+### Controller Functions
+```javascript
+const userController = (req, res) => {
+  const handler = req.versionedCode['routes/users.js'];
+  handler.get(req, res);
+};
+
+app.use('/user/:version', versionMiddleware(['v1', 'v2'], userController));
+```
+
+### Express Routers
+```javascript
+const router = express.Router();
+// Define routes...
+
+app.use('/api/:version', versionMiddleware(['v1', 'v2'], router));
+```
+
+## 🧪 Testing
 
 ```bash
-npx apiver hotfix v2 routes/users.js
+npm test  # 84/84 tests passing (100% coverage)
 ```
-This applies the fix **without restarting the server**.
-
----
-
-## 🎯 Use Cases
-
-- Maintain multiple versions without duplication.
-- Instantly switch between versions.
-- Reduce production memory footprint.
-- Secure patches without exposing raw source.
-
----
-
-## 🌐 Documentation Website
-
-The full documentation and workflow diagrams are available in the hosted HTML version.  
-You can open `index.html` from this repo locally or host it on GitHub Pages / Vercel.
-
----
 
 ## 📜 License
 
-MIT License – Use freely with attribution.
-
----
-
-*Generated and placed into the project's canvas by the assistant.*
+MIT License

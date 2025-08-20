@@ -1,0 +1,34 @@
+# Development files
+__tests__/
+*.test.js
+jest.config.js
+
+# Documentation and examples
+examples/
+projectHistory/
+index.html
+document.md
+
+# Development tools
+.amazonq/
+debug-runtime.js
+
+# Git files
+.gitignore
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime generated
+.apiver/

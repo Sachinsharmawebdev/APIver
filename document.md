@@ -1,191 +1,172 @@
-````
-# APIver
+# APIver Package Documentation
 
-**APIver** is a lightweight CLI tool for managing multiple API versions in Node.js projects. It allows you to create, serve, and cache different API versions dynamically, ensuring backward compatibility and isolated version execution.
+## Overview
+APIver is a Git-like API versioning tool for managing multiple API versions in a single codebase. It uses encrypted patches and memory-based serving for production performance.
 
----
-
-## 🚀 Features
-
-- Manage multiple API versions via CLI.
-- Serve specific versions dynamically in Express routes.
-- Cache old versions for temporary use.
-- Apply hotfixes, inspect files, check diffs.
-- Copy, delete, and list versions.
-- Fully isolated version execution.
-
----
-
-## 💻 Installation
-
+## Installation
 ```bash
 npm install apiver
-````
+```
 
----
-
-## ⚡ CLI Commands
-
-| Command                                                | Description                                      | Example                                 |
-| ------------------------------------------------------ | ------------------------------------------------ | --------------------------------------- |
-| `npx apiver init <version>`                            | Snapshot current working code as first version   | `npx apiver init v1`                    |
-| `npx apiver new <new_version> from <existing_version>` | Create new version from existing                 | `npx apiver new v2 from v1`             |
-| `npx apiver switch <version>`                          | Switch active version for local editing          | `npx apiver switch v2`                  |
-| `npx apiver diff <v1> <v2>`                            | Show diff between versions                       | `npx apiver diff v1 v3`                 |
-| `npx apiver inspect <version> <file>`                  | Inspect file in production                       | `npx apiver inspect v2 routes/users.js` |
-| `npx apiver hotfix <version> <file>`                   | Apply hotfix to running version                  | `npx apiver hotfix v2 routes/users.js`  |
-| `npx apiver copy <source> to <target>`                 | Copy source version to target                    | `npx apiver copy v2 to v1`              |
-| `npx apiver delete <version>`                          | Delete a version                                 | `npx apiver delete v1`                  |
-| `npx apiver list`                                      | Show all versions (current highlighted in green) | `npx apiver list`                       |
-
----
-
-## 🧩 Express Integration
-
-### server.js
-
+## Quick Setup (2 lines)
 ```javascript
-const express = require('express');
-const { loadVersionsInMemory } = require('apiver');
-const apiRoutes = require('./routes/apiRoutes');
+const { loadVersion, versionMiddleware } = require('apiver');
 
-const app = express();
-app.use(loadVersionsInMemory(['v1','v2']));
-app.use('/api/:version', apiRoutes);
-app.listen(3000, () => console.log('Server running on port 3000'));
+loadVersion(['v1', 'v2']); // 1. Load versions into memory
+app.use('/api/:version', versionMiddleware(['v1', 'v2'])); // 2. Serve via middleware
 ```
 
-### apiRoutes.js
+## CLI Workflow
 
+### Initialize Project
+```bash
+npx apiver init v1
+```
+
+### Create API Files
 ```javascript
-const express = require('express');
-const route = express.Router();
-const userController = require('../controllers/userController');
-const { versionMiddleware } = require('apiver');
-
-route.get('/userDetails/:version', versionMiddleware(["v1","v2"]), userController.userDetailsAccess);
-module.exports = route;
+// routes/users.js
+module.exports = {
+  get: (req, res) => res.json({ version: 'v1', users: ['alice'] })
+};
 ```
 
-**Behavior:**
-
-* Latest code executes until middleware triggers version execution.
-* `/api/v1/userDetails` → executes v1 cached snapshot.
-* `/api/v2/userDetails` → executes v2 latest code (then cached).
-* Middleware controls allowed versions.
-
----
-
-## 📁 Folder Structure
-
-```
-project-root/
-├─ .apiver/
-│  ├─ v1/                  # Snapshot of v1
-│  ├─ v2/                  # Snapshot of v2
-│  └─ meta.json            # Version metadata
-├─ routes/
-│  └─ apiRoutes.js
-├─ controllers/
-│  └─ userController.js
-├─ server.js
-├─ package.json
+### Commit Version
+```bash
+npx apiver commit -m "Initial v1 API"
 ```
 
----
-
-## 🗂 Version Metadata (meta.json)
-
-```json
-{
-  "versions": {
-    "v1": { "type": "full", "snapshot": "v1.full.apiver" },
-    "v2": { "base": "v1", "type": "patch", "patchesAfterSnapshot": ["v2.patch.apiver"] }
-  },
-  "hotfixes": { "v1": [], "v2": [] }
-}
+### Create New Version
+```bash
+npx apiver new v2 from v1
+# Edit files for v2
+npx apiver commit -m "Enhanced v2 API"
 ```
 
----
+## Express Integration Options
 
-## 🔄 Workflow Diagram (ASCII)
-
-```
-Developer Code Changes
-        │
-        ▼
-   apiver CLI Commands
-(init/new/switch/hotfix/copy/delete)
-        │
-        ▼
-   .apiver Folder (Snapshots & Metadata)
-        │
-        ▼
-Express App Loads Versions
-(loadVersionsInMemory → cache ready)
-        │
-        ▼
-Route Request
-        │
-        ▼
-+-------------------------------+
-| versionMiddleware checks      |
-| requested version             |
-+-------------------------------+
-        │
-        ▼
-+-------------------------------+
-| Allowed version?              |
-|   Yes -> Execute cached code  |
-|   No  -> Error: Access Denied |
-+-------------------------------+
-        │
-        ▼
-Controller Execution
-- /api/v1/... → v1 snapshot
-- /api/v2/... → v2 latest (then cached)
+### Auto-serve from routes/ folder
+```javascript
+app.use('/api/:version', versionMiddleware(['v1', 'v2']));
 ```
 
----
+### With Controller Function
+```javascript
+const userController = (req, res) => {
+  const handler = req.versionedCode['routes/users.js'];
+  handler.get(req, res);
+};
 
-## 🖥 Cache Execution Flow (ASCII)
-
-```
-Compressed/Binary Snapshot in .apiver
-        │
-        ▼
- loadVersionsInMemory()
-        │  (constructs full snapshot in memory)
-        ▼
- Memory Cache
-  { v1: {controllers/functions},
-    v2: {controllers/functions} }
-        │
-        ▼
- Incoming Request (/api/v1/userDetails)
-        │
-        ▼
- versionMiddleware selects v1
-        │
-        ▼
- Execute cache['v1']['routes/userController.js'].userDetails(req,res)
+app.use('/user/:version', versionMiddleware(['v1', 'v2'], userController));
 ```
 
-* Cache me code **pre-compiled executable objects** ban jaate hain.
-* Execution tabhi hota hai jab middleware route ke through request pass karta hai.
+### With Express Router
+```javascript
+const router = express.Router();
+// Define your routes...
 
----
+app.use('/api/:version', versionMiddleware(['v1', 'v2'], router));
+```
 
-## ✅ Benefits
+## API Reference
 
-* Maintain backward compatibility.
-* Reduce code duplication.
-* Multiple versions run simultaneously.
-* Hotfixes, copy, delete, and list versions easily.
-* Easy cleanup of outdated versions.
+### loadVersion(versions)
+Loads version(s) into memory cache.
 
----
+**Parameters:**
+- `versions` (string|array): Single version or array of versions
 
-## 📄 License
+**Returns:**
+- Object: Code tree for single version
+- Object: `{v1: codeTree, v2: codeTree}` for array input
 
-MIT License – Use freely with attribution.
+### versionMiddleware(allowedVersions, handler?)
+Express middleware for serving versioned APIs.
+
+**Parameters:**
+- `allowedVersions` (array): Allowed version identifiers
+- `handler` (function|router, optional): Custom handler or router
+
+**Request Enhancement:**
+- `req.apiVersion`: Detected version
+- `req.versionedCode`: Loaded version code tree
+
+## CLI Commands
+
+| Command | Description |
+|---------|-------------|
+| `init v1` | Initialize with first version |
+| `new v2 from v1` | Create new version |
+| `switch v2` | Switch to version |
+| `commit -m "msg"` | Commit changes |
+| `list` | Show all versions |
+| `diff v1 v2` | Compare versions |
+| `inspect v1 file.js` | View file in version |
+| `hotfix v1 file.js` | Apply hotfix |
+| `copy v1 to v2` | Copy version |
+| `delete v1` | Delete version |
+
+## Architecture
+
+### File Structure
+```
+project/
+├── routes/users.js      # Edit directly (Git-like)
+├── controllers/         # Your code
+├── .apiver/
+│   ├── snapshots/       # Encrypted versions
+│   ├── patches/         # Incremental changes
+│   └── meta.json        # Version metadata
+└── package.json
+```
+
+### Memory Serving
+1. Versions loaded into memory at startup
+2. Zero disk I/O during requests
+3. Encrypted storage at rest
+4. Patch-based incremental changes
+
+## Production Features
+
+### Zero-Latency Serving
+```javascript
+// All versions cached in memory
+const versions = loadVersion(['v1', 'v2', 'v3']);
+
+// Instant response from memory
+app.use('/api/:version', versionMiddleware(['v1', 'v2', 'v3']));
+```
+
+### Error Tracing
+```javascript
+// Automatic version tagging in logs
+console.error(`Error in ${req.apiVersion}: ${error.message}`);
+```
+
+### Hotfixes
+```bash
+# Apply fix without restart
+npx apiver hotfix v2 routes/users.js
+```
+
+## Testing
+
+```bash
+npm test  # 84/84 tests passing
+```
+
+**Test Coverage:**
+- CLI commands (19 tests)
+- Runtime loading (12 tests) 
+- Express integration (22 tests)
+- Array loading (10 tests)
+- Integration workflows (18 tests)
+- Debug utilities (3 tests)
+
+## Best Practices
+
+1. **Load at Startup**: Call `loadVersion()` once at application start
+2. **Version Naming**: Use consistent naming (v1, v2, v3)
+3. **Memory Management**: Monitor memory with many versions
+4. **Error Handling**: Use `req.apiVersion` for error context
+5. **Testing**: Test each version before production deployment
