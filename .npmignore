@@ -8,10 +8,12 @@ examples/
 projectHistory/
 index.html
 document.md
+VERIFICATION_RESULTS.md
 
 # Development tools
 .amazonq/
-debug-runtime.js
+debug-*.js
+verify-*.js
 
 # Git files
 .gitignore
